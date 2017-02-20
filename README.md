@@ -28,3 +28,7 @@ Read on to check out the code I used and how to adapt it for your own use.
 7. Enjoy your weekly habit update!
 
 
+# Example Output
+[The report will look something like this.](example_output.md)  
+The formatting is a *little* dicey due to rendering on github.
+You can also try opening [example_output.html](example_output.html) in your browser.
