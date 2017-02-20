@@ -1,0 +1,1 @@
+59 23 * * sun    {PUT HABIT TRACKING DIRECTORY HERE}/habits_cron.sh

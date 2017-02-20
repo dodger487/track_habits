@@ -1,0 +1,175 @@
+---
+title: "Habits Report"
+author: "Chris Riederer"
+date: "February 19, 2017"
+output: html_document
+---
+
+## Intro
+Report and visualize some data kept from my "Habits" spreadsheet.
+
+```{r, echo=FALSE, include=FALSE}
+################################################################################
+# Imports
+
+library(dplyr)
+library(ggplot2)
+library(googlesheets)  # https://github.com/jennybc/googlesheets
+library(lubridate)
+library(pander)
+panderOptions("digits", 2)
+
+
+################################################################################
+# Load data
+
+# Get Google Sheet
+gs_auth(token = "googlesheets_token.rds")
+habits <- gs_title("Sample Habit Tracking")
+
+# Get this year's data
+data_2017 <- habits %>% gs_read(ws = "2017")
+
+# Clean Exercise so it says "None" instead of being NA
+data_2017[["Exercise"]][is.na(data_2017[["Exercise"]])] <- ""
+data_2017 <- data_2017 %>% mutate(exercised = Exercise != "")
+
+# Translate messier time (read as a string) to a Posix time
+data_2017 <- data_2017 %>% 
+  mutate(wake_up = as.POSIXct(`Wake Up`, format = "%H:%M"))
+
+# Make a few reusable dataframes for different timeframes
+### TODO: UNCOMMENT THE LINE BELOW, DELETE THE LINE BELOW THAT
+# current_day <- Sys.Date()
+current_day <- date("2017-02-19")
+
+df_ytd <- data_2017 %>% filter(Day < current_day)
+df_month <- data_2017 %>% filter(Day >= current_day %m-% months(1),
+                                 Day <  current_day)
+df_week  <- data_2017 %>% filter(Day >= current_day %m-% weeks(1),
+                                 Day <  current_day)
+
+```
+
+
+## Meditation
+Visualize trends in how much I'm meditating per day, and do counts of days when I meditate or not.
+
+```{r, echo=FALSE, fig.width=9, fig.height=3}
+ggplot(df_ytd, aes(x = Day, y=Meditate)) + 
+  geom_point() + 
+  geom_smooth(se=F) +
+  geom_smooth(method = "lm", color="red", se=F) +
+  scale_y_continuous("Minutes of Meditation") + 
+  theme_bw() + 
+  theme(rect = element_blank())
+```
+```{r, echo=FALSE, fig.width=4.5, fig.height=3}
+ggplot(df_month, aes(x = Day, y=Meditate)) + 
+  geom_point() + 
+  geom_smooth(se=F) +
+  geom_smooth(method = "lm", color="red", se=F) +
+  scale_y_continuous("Minutes of Meditation") + 
+  theme_bw() + 
+  theme(rect = element_blank())
+ggplot(df_week, aes(x = Day, y=Meditate)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", color="red", se=F) +
+  scale_y_continuous("Minutes of Meditation") + 
+  theme_bw() + 
+  theme(rect = element_blank())
+```
+
+```{r, echo=FALSE}
+# Print counts
+df_ytd %>% 
+  count(days_meditated_this_year = Meditate != 0) %>%
+  mutate(percent = n / sum(n)) %>%
+  pander
+```
+
+```{r, echo=FALSE}
+df_month %>% 
+  count(days_meditated_this_month = Meditate != 0) %>%
+  mutate(percent = n / sum(n)) %>%
+  pander
+```
+
+
+## Wake Times
+```{r, echo=FALSE, fig.width=9, fig.height=3}
+ggplot(df_ytd, aes(x = Day, y=wake_up)) + 
+  geom_point() + 
+  geom_smooth(se = F) + 
+  ylab("Wake Time") +
+  ggtitle("Wake Times: Year") +
+  theme_bw() + 
+  theme(rect=element_blank())
+```
+```{r, echo=FALSE, fig.width=6, fig.height=3}
+ggplot(df_month, aes(x = Day, y=wake_up)) + 
+  geom_point() + 
+  geom_smooth(se = F) + 
+  geom_smooth(method = "lm", color="red", se=F) +
+  ggtitle("Wake Times: Month")+
+  theme_bw() + 
+  theme(rect=element_blank())
+```
+```{r, echo=FALSE, fig.width=3, fig.height=3}
+
+ggplot(df_week, aes(x = Day, y=wake_up)) + 
+  geom_point() + 
+  geom_smooth(se = F, method = "lm", color="red") + 
+  ylab("Wake Time") +
+  ggtitle("Wake Times: Week") +
+  theme_bw() + 
+  theme(rect=element_blank())
+```
+
+## Exercise
+```{r, echo=FALSE, message=FALSE, fig.width=8}
+exer_year_cnt <- df_ytd %>% count(Exercise) %>% rename(year = n)
+exer_mnth_cnt <- df_month %>% count(Exercise) %>% rename(month = n)
+exer_week_cnt <- df_week %>% count(Exercise) %>% rename(week = n)
+exer_counts <- full_join(exer_year_cnt, exer_mnth_cnt)
+exer_counts <- full_join(exer_counts, exer_week_cnt)
+exer_counts[is.na(exer_counts)] <- 0
+
+exer_counts %>% filter(Exercise != "") %>% pander
+```
+
+```{r, echo=FALSE, fig.width=9, fig.height=3}
+ggplot(df_ytd, aes(x = Day, y=as.integer(exercised), label=Exercise)) + 
+  geom_point(aes(color = Exercise)) + 
+  geom_text(hjust=0, nudge_y = -0.02,  angle = -90) +
+  # geom_smooth(method = "lm", color = "red", se = F) +
+  geom_smooth(color = "blue", se = F) + 
+  scale_colour_brewer(palette = "Dark2") + 
+  scale_y_continuous("Exercised") +
+  theme_bw() + 
+  theme(axis.text.y=element_blank(),
+        rect=element_blank())
+```
+```{r, echo=FALSE, fig.width=6, fig.height=3}
+ggplot(df_month, aes(x = Day, y=as.integer(exercised), label=Exercise)) + 
+  geom_point() + 
+  geom_text(hjust=0, nudge_y = -0.02,  angle = -90) +
+  geom_smooth(method = "lm", color = "red", se = F) +
+  geom_smooth(color = "blue", se = F) + 
+  scale_colour_brewer(palette = "Dark2") + 
+  scale_y_continuous("Exercised") +
+  theme_bw() + 
+  theme(axis.text.y=element_blank(),
+        rect=element_blank())
+```
+```{r, echo=FALSE, fig.width=3, fig.height=3}
+ggplot(df_week, aes(x = Day, y=as.integer(exercised), label=Exercise)) + 
+  geom_point() + 
+  geom_text(hjust=0, nudge_y = -0.02,  angle = -90) + 
+  scale_colour_brewer(palette = "Dark2") + 
+  scale_y_continuous("Exercised") +
+  theme_bw() + 
+  theme(axis.text.y=element_blank(),
+        rect=element_blank())
+```
+
