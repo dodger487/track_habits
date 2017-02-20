@@ -23,7 +23,7 @@ Read on to check out the code I used and how to adapt it for your own use.
 2. Run `setup_googlesheets.R`
 3. Try running `habits.Rmd` in R Studio
 4. Use your own spreadsheet or modify the copied spreadsheet and update `habits.Rmd` accordingly.
-5. Edit `habits_cron.sh` so `cron` knows where `R` and `R libraries are located.
+5. Edit `habits_cron.sh` so `cron` knows where `R` and `R` libraries are located.
 6. Edit `habit_tracking.cron` and put the contained line of text into cron via running `crontab -e` from the command line.
 7. Enjoy your weekly habit update!
 
