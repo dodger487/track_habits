@@ -27,8 +27,10 @@ Read on to check out the code I used and how to adapt it for your own use.
 6. Edit `habit_tracking.cron` and put the contained line of text into cron via running `crontab -e` from the command line.
 7. Enjoy your weekly habit update!
 
+# Detaiiled Instructions
+
+...are [available on my blog](http://relevantmisc.com/r/2017/02/26/habits-r/)
 
 # Example Output
 [The report will look something like this.](example_output.md)  
-The formatting is a *little* dicey due to rendering on github.
 You can also try opening [example_output.html](example_output.html) in your browser.
